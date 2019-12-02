@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zjc.myshop.dao.TbUserDao">
+    <!--
+    由于多个查询和单个查询以及模糊查询都使用了对应表的属性，所以违反了重构原则，所以要进行重构，提取公共部分 写一个sql片段
+    -->
+    <sql id="tbUserColumns">
+         a.id,
+        a.username,
+        a.password,
+        a.phone,
+        a.email,
+        a.created,
+        a.updated
+    </sql>
+    <!--id必须要和dao里的方法名相同-->
+    <select id="selectAll" resultType="TbUser">
+        SELECT
+       <include refid="tbUserColumns"/>
+        FROM tb_user AS a
+    </select>
+    <insert id="insert">
+        INSERT INTO tb_user (
+          username,
+          password,
+          phone,
+          email,
+          created,
+          updated
+        )
+        VALUES
+          (
+            #{username},
+            #{password},
+            #{phone},
+            #{email},
+            #{created},
+            #{updated}
+          )
+    </insert>
+    <delete id="delete">
+        DELETE FROM tb_user WHERE id=#{id}
+    </delete>
+    <select id="getById" resultType="TbUser">
+        SELECT
+        <include refid="tbUserColumns"/>
+        FROM tb_user AS a
+        WHERE a.id=#{id}
+    </select>
+    <update id="update">
+        UPDATE tb_user SET
+        username=#{username},
+        password=#{password},
+        phone=#{phone},
+        email=#{email},
+        updated=#{updated}
+        WHERE id=#{id}
+    </update>
+    <select id="selectByUserName" resultType="TbUser">
+        SELECT
+        <include refid="tbUserColumns"/>
+        FROM tb_user AS a
+        WHERE a.username LIKE CONCAT('%',#{username},'%')
+    </select>
+    <select id="getByEmail" resultType="TbUser">
+      SELECT
+        <include refid="tbUserColumns"/>
+        FROM tb_user AS a WHERE a.email=#{email}
+    </select>
+    <!--搜索-->
+    <select id="search" resultType="TbUser">
+    SELECT
+    <include refid="tbUserColumns"/>
+        FROM
+        tb_user AS a
+        <where>
+            <if test="username!=null and username!=''">
+                AND a.username LIKE CONCAT('%',#{username},'%')
+            </if>
+            <if test="phone!=null and phone!=''">
+                AND a.phone LIKE CONCAT('%',#{phone},'%')
+            </if>
+            <if test="email!=null and email!=''">
+                AND a.email LIKE CONCAT('%',#{email},'%')
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteMulti">
+        DELETE FROM tb_user
+        WHERE id in
+        <foreach collection="array" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+    </delete>
+<!--parameterType参数的类型
+    <select id="page" resultType="TbUser" parameterType="java.util.Map">
+        SELECT
+        <include refid="tbUserColumns"/>
+        FROM
+        tb_user AS a LIMIT #{start},#{length}
+    </select>
+    &lt;!&ndash;查询总笔数&ndash;&gt;
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(*) FORM tb_user
+    </select>-->
+
+    <select id="page" resultType="TbUser" parameterType="java.util.Map">
+        SELECT
+        <include refid="tbUserColumns" />
+        FROM
+        tb_user AS a
+        <where>
+            <if test="pageParams.username != null and pageParams.username != ''" >
+                AND a.username LIKE CONCAT ('%', #{pageParams.username}, '%')
+            </if>
+            <if test="pageParams.phone != null and pageParams.phone != ''" >
+                AND a.phone LIKE CONCAT ('%', #{pageParams.phone}, '%')
+            </if>
+            <if test="pageParams.email != null and pageParams.email != ''" >
+                AND a.email LIKE CONCAT ('%', #{pageParams.email}, '%')
+            </if>
+        </where>
+        ORDER BY a.updated DESC
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM tb_user AS a
+        <where>
+            <if test="username != null and username != ''" >
+                AND a.username LIKE CONCAT ('%', #{username}, '%')
+            </if>
+            <if test="phone != null and phone != ''" >
+                AND a.phone LIKE CONCAT ('%', #{phone}, '%')
+            </if>
+            <if test="email != null and email != ''" >
+                AND a.email LIKE CONCAT ('%', #{email}, '%')
+            </if>
+        </where>
+    </select>
+</mapper>
